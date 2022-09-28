@@ -1,2 +1,2 @@
 # INE-5410
-Code for assignments and projects for INE-5410 - Concurrent and Parallel Programming.
+Exercises and assignments for my concurrent programming class.
