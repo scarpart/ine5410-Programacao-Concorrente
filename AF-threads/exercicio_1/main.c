@@ -26,16 +26,20 @@
 
 int contador_global = 0;
 
+/* declaring a struct ARGS so that all the arguments 
+can be passed into the thread function */
 typedef struct ARGS {
-    int *var;
+    int *counter;
     int n;
 } ARGS;
 
-void* count(void* allargs) {
-    ARGS *arg = (ARGS *)allargs;
+void* thread(void* allargs) {
+    /* due to pthread_create, allargs must be void*,
+    therefore, it needs to be casted back into ARGS* */
+    ARGS *arg = (ARGS *)allargs; 
     for (int j = 0; j < arg->n; j++)
-        (*(arg->var))++;
-    pthread_exit(arg->var);
+        (*(arg->counter))++; 
+    pthread_exit(arg->counter);
 }
 
 int main(int argc, char* argv[]) {
@@ -48,12 +52,14 @@ int main(int argc, char* argv[]) {
     int n_threads = atoi(argv[1]);
     int n_loops = atoi(argv[2]);
 
-    pthread_t all_threads[n_threads];
+    pthread_t all_threads[n_threads]; // array to store the unique thread ids
     ARGS allargs = { &contador_global, n_loops };
 
     for (int i = 0; i < n_threads; i++)
-        pthread_create(&all_threads[i], NULL, count, (void *) &allargs); 
+        pthread_create(&all_threads[i], NULL, thread, (void *) &allargs); 
     
+    /* all threads need to be joined after their operations are done
+    this is due to them having to share the same global variable */
     for (int z = 0; z < n_threads; z++)
         pthread_join(all_threads[z], NULL);
     
