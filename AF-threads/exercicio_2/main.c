@@ -5,6 +5,14 @@
 #include <stdio.h>
 #include <pthread.h>
 
+typedef struct allargs {
+    double* a;
+    double* b;
+    double* c;
+    int n_loops;
+    int* start;
+} allargs;
+
 // Lê o conteúdo do arquivo filename e retorna um vetor E o tamanho dele
 // Se filename for da forma "gen:%d", gera um vetor aleatório com %d elementos
 //
@@ -15,6 +23,7 @@
 // v                                       v
 double* load_vector(const char* filename, int* out_size);
 
+void* thread(void* arg);
 
 // Avalia o resultado no vetor c. Assume-se que todos os ponteiros (a, b, e c)
 // tenham tamanho size.
@@ -69,9 +78,26 @@ int main(int argc, char* argv[]) {
     // Calcula com uma thread só. Programador original só deixou a leitura 
     // do argumento e fugiu pro caribe. É essa computação que você precisa 
     // paralelizar
-    for (int i = 0; i < a_size; ++i) 
-        c[i] = a[i] + b[i];
 
+    /* caso o n_threads seja maior que os vetores, 
+    diminui n_threads para limitar seu uso */
+    if (n_threads > a_size) n_threads = a_size;
+
+    int n_loops = a_size / n_threads;
+    int remainder_loops = a_size % n_threads;
+    int start = 0;
+    pthread_t all_threads[n_threads];
+    allargs std_args = { a, b, c, n_loops, &start };
+    allargs rem_args = { a, b, c, n_loops+remainder_loops, &start };
+
+    int i = 0;
+    for (i = 0; i < n_threads-1; ++i) 
+        pthread_create(&all_threads[i], NULL, thread, (void*) &std_args);
+    pthread_create(&all_threads[i], NULL, thread, (void*) &rem_args);
+
+    for (int j = 0; j < n_threads; j++)
+        pthread_join(all_threads[j], NULL);
+        
     //    +---------------------------------+
     // ** | IMPORTANTE: avalia o resultado! | **
     //    +---------------------------------+
@@ -84,4 +110,12 @@ int main(int argc, char* argv[]) {
     free(c);
 
     return 0;
+}
+
+void* thread(void* arg) {
+    allargs* args = (allargs*)arg;
+    for (int i = *(args->start); i < args->n_loops + *(args->start); i++)
+        args->c[i] = args->a[i] + args->b[i];
+    *(args->start) += args->n_loops;
+    pthread_exit(NULL);
 }
