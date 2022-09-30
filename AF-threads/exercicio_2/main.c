@@ -5,12 +5,15 @@
 #include <stdio.h>
 #include <pthread.h>
 
+/* definindo o struct que vai ser usado para passar
+todos os argumentos necessários à função thread */
 typedef struct allargs {
     double* a;
     double* b;
-    double* c;
-    int n_loops;
-    int* start;
+    double* c;     
+    int n_loops;          // a_size / n_threads = n_loops
+    int* start;           // index do início do for na função thread
+    int* remainder_loops; // a_size % n_threads = remainder_loops
 } allargs;
 
 // Lê o conteúdo do arquivo filename e retorna um vetor E o tamanho dele
@@ -87,15 +90,13 @@ int main(int argc, char* argv[]) {
     int remainder_loops = a_size % n_threads;
     int start = 0;
     pthread_t all_threads[n_threads];
-    allargs std_args = { a, b, c, n_loops, &start };
-    allargs rem_args = { a, b, c, n_loops+remainder_loops, &start };
+    allargs std_args = { a, b, c, n_loops, &start, &remainder_loops };
 
-    int i = 0;
-    for (i = 0; i < n_threads-1; ++i) 
+    int i;
+    for (i = 0; i < n_threads; ++i)   
         pthread_create(&all_threads[i], NULL, thread, (void*) &std_args);
-    pthread_create(&all_threads[i], NULL, thread, (void*) &rem_args);
 
-    for (int j = 0; j < n_threads; j++)
+    for (int j = 0; j < n_threads; j++) 
         pthread_join(all_threads[j], NULL);
         
     //    +---------------------------------+
@@ -114,8 +115,18 @@ int main(int argc, char* argv[]) {
 
 void* thread(void* arg) {
     allargs* args = (allargs*)arg;
-    for (int i = *(args->start); i < args->n_loops + *(args->start); i++)
+
+    /* essa variável armazena n_loops se não tiver remainder_loops,
+    caso tenha, ela vai armazenar n_loops+1 para distribuir os 
+    remainder_loops de forma igualitária para vários threads */
+    int temp = args->n_loops;
+    if (*(args->remainder_loops) > 0) {
+        temp++;
+        *(args->remainder_loops) -= 1;
+    }
+    
+    for (int i = *(args->start); i < temp + *(args->start); i++)
         args->c[i] = args->a[i] + args->b[i];
-    *(args->start) += args->n_loops;
+    *(args->start) += temp;
     pthread_exit(NULL);
 }
