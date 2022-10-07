@@ -65,6 +65,13 @@ graph TD
     C -->|3| A
 ```
 
+1. The process gets blocked awaiting an input.
+2. Process manager selects another process.
+3. Process manager selects this process.
+4. The input becomes available.
+
+**2.1.6 - Process Implementation**
+
 
 
 
