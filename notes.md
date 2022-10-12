@@ -57,6 +57,7 @@ There are 3 possible states to a process:
 2. Ready (executable; temporarily stopped so that another process can run).
 3. Blocked (incapable of executing until an external event doesn't occur).
 
+An illustrative flowchart:
 ```mermaid
 graph TD
     A(In Execution) -->|1| B(Blocked)
@@ -64,13 +65,29 @@ graph TD
     B(Blocked) -->|4| C(Ready)
     C -->|3| A
 ```
-
+Legend:
 1. The process gets blocked awaiting an input.
 2. Process manager selects another process.
 3. Process manager selects this process.
 4. The input becomes available.
 
 **2.1.6 - Process Implementation**
+
+To implement process models, the OS maintains a **table of processes**, which saves all the relevant information of a process when it goes from _in execution_ to _blocked_ or _ready_ so it can be restarted later.
+
+## **2.2 - Threads**
+
+In traditional operating systems, each process has an adress space and a single thread (flux of control).
+
+**2.2.1 - The Model of a Thread**
+
+A process model is based on two independent concepts: resource agroupment and execution. Sometimes, it's useful to separate them, as is the case for threads.
+
+A thread has a program counter that maintains control on what instruction is to be executed next. It has registers that store its current work variables. It has a stack that keeps track of the execution history.
+
+Having multiple threads working in parallel in the same process is like having multiple processes running in parallel in the same computer. In the first case, the threads share a same adress space, opened files and other resources. In the last case, the processes share a physical memory space, disks, printers and similar resources. 
+
+
 
 
 
