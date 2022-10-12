@@ -3,7 +3,7 @@ These notes are taken from Modern Operating Systems, 2nd edition by Andrew S. Ta
 <hr /> 
 
 # Processes and Threads
-<sup>Page 53 - 112 </sup>
+<sup>Pages 53 - 112 </sup>
 
 ## **2.1 - Processes**
 A computer can do several things at a time. A CPU can jump from program to program several times a second, executing each for milliseconds at a time. Whilst it can only work on one task at a given moment, a processor can change between them and give an impression of parallelism (pseudoparallelism - an imitation of the parallelism done by multiprocessors that have two or more CPUs and share simultaneously the same physical memory).
