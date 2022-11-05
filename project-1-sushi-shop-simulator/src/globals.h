@@ -6,6 +6,11 @@
 #include "virtual_clock.h"
 #include "queue.h"
 
+/**
+ * @brief Retorna um ponteiro para o sushi_chef_mutex
+ * 
+ * @return pthread_mutex_t* 
+ */
 extern pthread_mutex_t* globals_get_sushi_chef_mutex();
 
 /**
