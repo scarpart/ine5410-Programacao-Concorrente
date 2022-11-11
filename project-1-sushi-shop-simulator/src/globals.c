@@ -16,12 +16,29 @@
 virtual_clock_t* global_virtual_clock = NULL;
 conveyor_belt_t* global_conveyor_belt = NULL;
 queue_t* global_queue = NULL;
-pthread_mutex_t* sushi_chef_mutex;
-pthread_mutex_init(sushi_chef_mutex);
 
-pthread_mutex_t* globals_get_sushi_chef_mutex() {
-    return sushi_chef_mutex;
+
+/* CÓDIGO QUE ADICIONAMOS COMEÇA AQUI */
+sem_t* seats_sem;
+pthread_mutex_t* food_slot_mutexes;
+
+void globals_set_seats_sem(sem_t* sem) {
+    seats_sem = sem;
 }
+
+sem_t* globals_get_seats_sem() {
+    return seats_sem;
+}
+
+void globals_set_food_slots_mutexes(int size) {
+    food_slot_mutexes = realloc(food_slot_mutexes, size*sizeof(pthread_mutex_t));
+}
+
+pthread_mutex_t* globals_get_food_slots_mutexes() {
+    return food_slot_mutexes;
+}
+/* CÓDIGO QUE ADICIONAMOS TERMINA AQUI */
+
 
 void globals_set_virtual_clock(virtual_clock_t* virtual_clock) {
     global_virtual_clock = virtual_clock;
@@ -55,6 +72,6 @@ queue_t* globals_get_queue() {
 void globals_finalize() {
     virtual_clock_finalize(global_virtual_clock);
     conveyor_belt_finalize(global_conveyor_belt);
-    pthread_mutex_destroy(sushi_chef_mutex);
-    free(sushi_chef_mutex);
+    free(food_slot_mutexes);
+    free(seats_sem);
 }

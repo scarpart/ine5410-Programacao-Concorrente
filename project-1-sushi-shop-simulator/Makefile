@@ -91,3 +91,7 @@ $(LIBDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 # Rule for cleaning the project
 clean:
 	@rm -rvf $(BINDIR)/* $(LIBDIR)/* $(LOGDIR)/*;
+
+run-docker:  ## Build and run docker sandbox
+	docker build . -t gcc-sandbox
+	docker run -it gcc-sandbox

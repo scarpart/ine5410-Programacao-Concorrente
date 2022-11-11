@@ -18,13 +18,24 @@ void* conveyor_belt_run(void* arg) {
         print_conveyor_belt(self);
 
         msleep(CONVEYOR_MOVING_PERIOD/virtual_clock->clock_speed_multiplier);
-        pthread_mutex_lock(&self->_food_slots_mutex);
-        int last = self->_food_slots[0];
+        //pthread_mutex_lock(&self->_food_slots_mutex);
+        //int last = self->_food_slots[0];
+        pthread_mutex_t* mutex = globals_get_food_slots_mutexes();
         for (int i=0; i<self->_size-1; i++) {
-            self->_food_slots[i] = self->_food_slots[i+1];
+            /* 
+            Mudamos a ordem de andamento da esteira:
+            antes ela caminhava da direita para esquerda, agora caminha da esquerda para
+            a direita (de 0 até self->_size-1). Isso foi feito para facilitar o uso de 
+            mutexes na nossa implementação e adquirir paralelismo de verdade.
+            */             
+            pthread_mutex_lock(&mutex[i]);
+            pthread_mutex_lock(&mutex[(i + 1) % self->_size]);
+            self->_food_slots[(i + 1) % self->_size] = self->_food_slots[i];
+            pthread_mutex_unlock(&mutex[(i + 1) % self->_size]);
+            pthread_mutex_unlock(&mutex[i]);
         }
-        self->_food_slots[self->_size-1] = last;
-        pthread_mutex_unlock(&self->_food_slots_mutex);
+        //self->_food_slots[self->_size-1] = last;
+        //pthread_mutex_unlock(&self->_food_slots_mutex);
 
         print_virtual_time(globals_get_virtual_clock());
         fprintf(stdout, GREEN "[INFO]" NO_COLOR " Conveyor belt finished moving...\n");

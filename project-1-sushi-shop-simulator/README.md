@@ -36,6 +36,21 @@ Para mais detalhes, execute:
 ./bin/assignment-1 -h
 ```
 
+### Utilizando Docker
+
+Caso você encontre problemas para compilar a aplicação (geralmente usuários de Windows encontram problemas com dependências de sistema), você pode usar o ambiente docker fornecido. Execute `make run-docker` no terminal para iniciar uma sessão interativa em um container Linux com gcc e todas dependências necessárias já instaladas.
+
+OBS: você precisa ter a ferramenta `docker` instalada na sua máquina. Caso não possua o comando `make`, você pode executar o ambiente docker utilizando os dois comandos abaixo:
+
+```shell
+docker build . -t gcc-sandbox
+```
+
+```shell
+docker run -it gcc-sandbox
+```
+
+
 ## Comportamentos esperados na simulação
 
 ### Conveyor Belt (Esteira)

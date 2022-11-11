@@ -22,6 +22,11 @@ int main (int argc, char** argv) {
     /* Setup sushi conveyor belt */
     globals_set_conveyor_belt(conveyor_belt_init(&config));
 
+    /* CÓDIGO QUE NÓS COLOCAMOS */
+    /* Setup mutex array dos food slots*/
+    globals_set_food_slots_mutexes(config.conveyor_belt_capacity);
+    /* FIM DO CÓDIGO QUE NÓS COLOCAMOS */
+
     /* Init the Sushi Chef */
     sushi_chef_t* sushi_chef = sushi_chef_init();
 

@@ -1,17 +1,41 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "sushi_chef.h"
+
 #include "conveyor_belt.h"
 #include "virtual_clock.h"
 #include "queue.h"
+#include "args.h"
+#include <semaphore.h>
+
 
 /**
- * @brief Retorna um ponteiro para o sushi_chef_mutex
+ * @brief Inicializa o array de mutexes com realloc
  * 
- * @return pthread_mutex_t* 
+ * @param size
  */
-extern pthread_mutex_t* globals_get_sushi_chef_mutex();
+void globals_set_food_slots_mutexes_array(int size);
+
+/**
+ * @brief Retorna um ponteiro para o array de mutexes
+ * 
+ * @return pthread_mutex_t*
+ */
+pthread_mutex_t* globals_get_food_slots_mutexes_array();
+
+/**
+ * @brief Inicia um semáforo de assentos (de modo global)
+ * 
+ * @param sem_t
+ */
+extern void globals_set_seats_sem(sem_t* sem) ;
+
+/**
+ * @brief Retorna um semáforo de assentos (de modo global)
+ * 
+ * @return sem_t*
+ */
+extern sem_t* globals_get_seats_sem();
 
 /**
  * @brief Inicia um relógio virtual (de modo global)
