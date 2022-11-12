@@ -5,26 +5,62 @@
 #include "customer.h"
 #include "globals.h"
 
+#define SIZE_OF_WISHLIST 5 // boas práticas de C - não deixar variáveis voando sem ter significado claro
 
 void* customer_run(void* arg) {
     /* 
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
-        1.  A PRIMEIRA AÇÃO REALIZADA SERÁ ESPERAR NA FILA GLOBAL DE CLIENTES, ATÉ QUE O HOSTESS
+        1.  🚧 A PRIMEIRA AÇÃO REALIZADA SERÁ ESPERAR NA FILA GLOBAL DE CLIENTES, ATÉ QUE O HOSTESS
             GUIE O CLIENTE PARA UM ASSENTO LIVRE.
-        2.  APÓS SENTAR-SE, O CLIENTE COMEÇARÁ PEGAR E COMER OS PRATOS DA ESTEIRA.
-        3.  O CLIENTE SÓ PODERÁ PEGAR UM PRATO QUANDO A ESTEIRA ESTIVER PARADA.
-        4.  O CLIENTE SÓ PEGARÁ PRATOS CASO ELE DESEJE-OS, INFORMAÇÃO CONTIDA NO ARRAY self->_wishes[...].
-        5.  APÓS CONSUMIR TODOS OS PRATOS DESEJADOS, O CLIENTE DEVERÁ SAIR IMEDIATAMENTE DA ESTEIRA.
-        6.  QUANTO O RESTAURANTE FECHAR, O CLIENTE DEVERÁ SAIR IMEDIATAMENTE DA ESTEIRA. 
-        7.  CASO O CLIENTE ESTEJA COMENDO QUANDO O SUSHI SHOP FECHAR, ELE DEVE TERMINAR DE COMER E EM SEGUIDA
+        2.  ✅ APÓS SENTAR-SE, O CLIENTE COMEÇARÁ PEGAR E COMER OS PRATOS DA ESTEIRA.
+        3.  🚧 O CLIENTE SÓ PODERÁ PEGAR UM PRATO QUANDO A ESTEIRA ESTIVER PARADA.
+        4.  ✅ O CLIENTE SÓ PEGARÁ PRATOS CASO ELE DESEJE-OS, INFORMAÇÃO CONTIDA NO ARRAY self->_wishes[...].
+        5.  ✅ APÓS CONSUMIR TODOS OS PRATOS DESEJADOS, O CLIENTE DEVERÁ SAIR IMEDIATAMENTE DA ESTEIRA.
+        6.  ✅ QUANTO O RESTAURANTE FECHAR, O CLIENTE DEVERÁ SAIR IMEDIATAMENTE DA ESTEIRA. 
+        7.  ✅ CASO O CLIENTE ESTEJA COMENDO QUANDO O SUSHI SHOP FECHAR, ELE DEVE TERMINAR DE COMER E EM SEGUIDA
             SAIR IMEDIATAMENTE DA ESTEIRA.
-        8.  LEMBRE-SE DE TOMAR CUIDADO COM ERROS DE CONCORRÊNCIA!
+        8.  ✅ LEMBRE-SE DE TOMAR CUIDADO COM ERROS DE CONCORRÊNCIA!
     */ 
     customer_t* self = (customer_t*) arg;
+    pthread_mutex_t* food_mutexes = globals_get_food_slots_mutexes();
+    conveyor_belt_t* conveyor = globals_get_conveyor_belt();
+    virtual_clock_t* clock = globals_get_virtual_clock();
 
     /* INSIRA SUA LÓGICA AQUI */
+    int n_pratos_desejados = 0;
+    for (int i = 0; i < SIZE_OF_WISHLIST; i++)
+        if (self->_wishes[i] > 0)
+            n_pratos_desejados += self->_wishes[i];
+
+    // ✅ 5
+    while (n_pratos_desejados > 0) {
+        // ✅ 2
+        for (int i = self->_seat_position - 1; i < self->_seat_position + 1; i = (i + 1)/conveyor->_size)
+            /* ✅ 8 - trylock retorna 0 se conseguiu dar lock no mutex, ou seja, se não
+            tem ninguém acessando aquela posição, estando livre. Caso == 0, checa se tem
+            comida na posição e a toma caso seja do tipo que queria */
+            if (pthread_mutex_trylock(&food_mutexes[i]) == 0) {
+                /* ✅ 6 e 7 - antes dele comer, checa se o restaurante fechou, caso sim,
+                ele sai, caso contrário ele come. Se o restaurante fechar enquanto ele come,
+                termina de comer e então na próxima iteração sai. */
+                if (clock->current_time < clock->closing_time) {
+                    n_pratos_desejados = 0;
+                    pthread_mutex_unlock(&food_mutexes[i]);
+                    break;
+                }
+
+                if (self->_wishes[conveyor->_food_slots[i]] > 0) {
+                    customer_pick_food(i);
+                    n_pratos_desejados--;
+                }
+                pthread_mutex_unlock(&food_mutexes[i]);
+            }
+    }
     
+    // ✅ 5
+    customer_leave(self);
+
     msleep(1000000);  // REMOVA ESTE SLEEP APÓS IMPLEMENTAR SUA SOLUÇÃO!
     pthread_exit(NULL);
 }
@@ -41,6 +77,8 @@ void customer_pick_food(int food_slot) {
         5.  NOTE QUE CLIENTES ADJACENTES DISPUTARÃO OS MESMOS PRATOS. CUIDADO COM PROBLEMAS DE SINCRONIZAÇÃO!
     */
 
+
+
     /* INSIRA SUA LÓGICA AQUI */
 }
 
@@ -48,14 +86,15 @@ void customer_eat(customer_t* self, enum menu_item food) {
     /*
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
-        1.  ESSA FUNÇÃO JÁ VEM COM PARTE DO CÓDIGO PRONTA (OS SLEEPS PARA CADA TIPO DE ALIMENTO).
-        2.  LEMBRE-SE DE DECREMENTAR OS ITENS DA LISTA DE DESEJOS DO CLIENTE CONFORME ELE CONSUMIR OS PRATOS.
-        3.  A LISTA DE DESEJOS DO CLIENTE É UM ARRAY COM AS QUANTIDADES DESEJADAS DE CADA PRATO.
-        4.  CADA PRATO DO MENU (VER ENUM `menu_item` NO ARQUIVO `menu.h` É REPRESENTADO POR UM INTEIRO),
+        1.  ✅ ESSA FUNÇÃO JÁ VEM COM PARTE DO CÓDIGO PRONTA (OS SLEEPS PARA CADA TIPO DE ALIMENTO).
+        2.  ✅ LEMBRE-SE DE DECREMENTAR OS ITENS DA LISTA DE DESEJOS DO CLIENTE CONFORME ELE CONSUMIR OS PRATOS.
+        3.  ✅ A LISTA DE DESEJOS DO CLIENTE É UM ARRAY COM AS QUANTIDADES DESEJADAS DE CADA PRATO.
+        4.  ✅ CADA PRATO DO MENU (VER ENUM `menu_item` NO ARQUIVO `menu.h` É REPRESENTADO POR UM INTEIRO),
             ENTÃO UM self->_wishes = [0,0,1,2,0] CONDIZ COM O DESEJO DE COMER 1 RAMÉN E 2 ONIGUIRIS.
     */
 
     /* INSIRA SUA LÓGICA AQUI */
+    self->_wishes[food] -= 1;
 
     /* NÃO EDITE O CONTEÚDO ABAIXO */
     virtual_clock_t* global_clock = globals_get_virtual_clock();
@@ -105,11 +144,19 @@ void customer_leave(customer_t* self) {
     /*
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
-        1.  ESSA FUNÇÃO DEVERÁ REMOVER O CLIENTE DO ASSENTO DO CONVEYOR_BELT GLOBAL QUANDO EXECUTADA.
+        1.  ✅ ESSA FUNÇÃO DEVERÁ REMOVER O CLIENTE DO ASSENTO DO CONVEYOR_BELT GLOBAL QUANDO EXECUTADA.
     */
     conveyor_belt_t* conveyor_belt = globals_get_conveyor_belt();
+    pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
 
     /* INSIRA SUA LÓGICA AQUI */
+    /* ✅ - Garante a atomicidade do acesso ao assento com mutexes e depois dá um post no
+    semáforo para indicar que mais um assento foi liberado e habilitar a hostess à guiar
+    um cliente */
+    pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
+    conveyor_belt->_seats[self->_seat_position] = -1;
+    pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
+    sem_post(globals_get_seats_sem());
 }
 
 customer_t* customer_init() {

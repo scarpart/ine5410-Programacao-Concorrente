@@ -8,20 +8,33 @@
 #include "args.h"
 #include <semaphore.h>
 
-
 /**
- * @brief Inicializa o array de mutexes com realloc
+ * @brief Inicializa o array de mutexes com malloc
  * 
  * @param size
  */
-void globals_set_food_slots_mutexes_array(int size);
+void globals_set_seat_mutexes(int size);
 
 /**
  * @brief Retorna um ponteiro para o array de mutexes
  * 
  * @return pthread_mutex_t*
  */
-pthread_mutex_t* globals_get_food_slots_mutexes_array();
+pthread_mutex_t* globals_get_seat_mutexes();
+
+/**
+ * @brief Inicializa o array de mutexes com malloc
+ * 
+ * @param size
+ */
+void globals_set_food_slots_mutexes(int size);
+
+/**
+ * @brief Retorna um ponteiro para o array de mutexes
+ * 
+ * @return pthread_mutex_t*
+ */
+pthread_mutex_t* globals_get_food_slots_mutexes();
 
 /**
  * @brief Inicia um semáforo de assentos (de modo global)

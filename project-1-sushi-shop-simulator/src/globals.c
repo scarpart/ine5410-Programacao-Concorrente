@@ -20,7 +20,8 @@ queue_t* global_queue = NULL;
 
 /* CÓDIGO QUE ADICIONAMOS COMEÇA AQUI */
 sem_t* seats_sem;
-pthread_mutex_t* food_slot_mutexes;
+pthread_mutex_t* food_slot_mutexes = NULL;
+pthread_mutex_t* seat_mutexes = NULL;
 
 void globals_set_seats_sem(sem_t* sem) {
     seats_sem = sem;
@@ -31,11 +32,19 @@ sem_t* globals_get_seats_sem() {
 }
 
 void globals_set_food_slots_mutexes(int size) {
-    food_slot_mutexes = realloc(food_slot_mutexes, size*sizeof(pthread_mutex_t));
+    food_slot_mutexes = malloc(size * sizeof(pthread_mutex_t));
 }
 
 pthread_mutex_t* globals_get_food_slots_mutexes() {
     return food_slot_mutexes;
+}
+
+void globals_set_seat_mutexes(int size) {
+    seat_mutexes = malloc(size * sizeof(pthread_mutex_t));
+}
+
+pthread_mutex_t* globals_get_seat_mutexes() {
+    return seat_mutexes;
 }
 /* CÓDIGO QUE ADICIONAMOS TERMINA AQUI */
 
@@ -74,4 +83,5 @@ void globals_finalize() {
     conveyor_belt_finalize(global_conveyor_belt);
     free(food_slot_mutexes);
     free(seats_sem);
+    free(seat_mutexes);
 }
