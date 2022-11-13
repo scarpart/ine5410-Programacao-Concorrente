@@ -13,6 +13,7 @@ void* queue_run(void *arg) {
     virtual_clock_t* clock = globals_get_virtual_clock();
     while (TRUE) {
         customer_t* customer = customer_init();
+        sem_init(&customer->_customer_sem, 0, 0); // 🤠🤠🤠🤠🤠🤠🤠
         queue_insert(self, customer);
         print_virtual_time(clock);
         fprintf(stdout, GREEN "[INFO]" NO_COLOR " Customer %d arrived at the Sushi Shop queue!\n", customer->_id);

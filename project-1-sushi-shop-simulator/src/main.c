@@ -20,7 +20,21 @@ int main (int argc, char** argv) {
     globals_set_virtual_clock(virtual_clock_init(&config));
 
     /* Setup sushi conveyor belt */
-    globals_set_conveyor_belt(conveyor_belt_init(&config));
+    //globals_set_conveyor_belt(
+    conveyor_belt_init(&config);
+
+    /* COISAS QUE ADICIONAMOS */
+    
+    // ARRUMA ISSO 🤠 
+    conveyor_belt_t* conveyor = globals_get_conveyor_belt();
+    sem_t *sem = globals_get_seats_sem();
+    sem_init(sem, 0, conveyor->_size);
+    
+    globals_set_seat_mutexes(conveyor->_size);
+    pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
+    for (int i = 0; i < conveyor->_size; i++)
+        pthread_mutex_init(&seat_mutexes[i], NULL);
+
 
     /* CÓDIGO QUE NÓS COLOCAMOS */
     /* Setup mutex array dos food slots*/

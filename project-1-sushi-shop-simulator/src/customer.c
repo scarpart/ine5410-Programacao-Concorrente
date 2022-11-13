@@ -11,10 +11,10 @@ void* customer_run(void* arg) {
     /* 
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
-        1.  🚧 A PRIMEIRA AÇÃO REALIZADA SERÁ ESPERAR NA FILA GLOBAL DE CLIENTES, ATÉ QUE O HOSTESS
+        1.  ✅ A PRIMEIRA AÇÃO REALIZADA SERÁ ESPERAR NA FILA GLOBAL DE CLIENTES, ATÉ QUE O HOSTESS
             GUIE O CLIENTE PARA UM ASSENTO LIVRE.
         2.  ✅ APÓS SENTAR-SE, O CLIENTE COMEÇARÁ PEGAR E COMER OS PRATOS DA ESTEIRA.
-        3.  🚧 O CLIENTE SÓ PODERÁ PEGAR UM PRATO QUANDO A ESTEIRA ESTIVER PARADA.
+        3.  ✅ O CLIENTE SÓ PODERÁ PEGAR UM PRATO QUANDO A ESTEIRA ESTIVER PARADA.
         4.  ✅ O CLIENTE SÓ PEGARÁ PRATOS CASO ELE DESEJE-OS, INFORMAÇÃO CONTIDA NO ARRAY self->_wishes[...].
         5.  ✅ APÓS CONSUMIR TODOS OS PRATOS DESEJADOS, O CLIENTE DEVERÁ SAIR IMEDIATAMENTE DA ESTEIRA.
         6.  ✅ QUANTO O RESTAURANTE FECHAR, O CLIENTE DEVERÁ SAIR IMEDIATAMENTE DA ESTEIRA. 
@@ -23,6 +23,8 @@ void* customer_run(void* arg) {
         8.  ✅ LEMBRE-SE DE TOMAR CUIDADO COM ERROS DE CONCORRÊNCIA!
     */ 
     customer_t* self = (customer_t*) arg;
+    self->_seat_position = -1;
+
     pthread_mutex_t* food_mutexes = globals_get_food_slots_mutexes();
     conveyor_belt_t* conveyor = globals_get_conveyor_belt();
     virtual_clock_t* clock = globals_get_virtual_clock();
@@ -34,28 +36,32 @@ void* customer_run(void* arg) {
             n_pratos_desejados += self->_wishes[i];
 
     // ✅ 5
+    sem_wait(&self->_customer_sem); /* giovani vai amar isso */
     while (n_pratos_desejados > 0) {
         // ✅ 2
-        for (int i = self->_seat_position - 1; i < self->_seat_position + 1; i = (i + 1)/conveyor->_size)
+        for (int i = self->_seat_position - 1; i <= self->_seat_position + 1; i++) {
+            fprintf(stdout, BLUE "VALOR DO CONVEYOR SIZE: %d\n", conveyor->_size);
+            int j = i % conveyor->_size;
             /* ✅ 8 - trylock retorna 0 se conseguiu dar lock no mutex, ou seja, se não
             tem ninguém acessando aquela posição, estando livre. Caso == 0, checa se tem
             comida na posição e a toma caso seja do tipo que queria */
-            if (pthread_mutex_trylock(&food_mutexes[i]) == 0) {
+            if (pthread_mutex_trylock(&food_mutexes[j]) == 0) {
                 /* ✅ 6 e 7 - antes dele comer, checa se o restaurante fechou, caso sim,
                 ele sai, caso contrário ele come. Se o restaurante fechar enquanto ele come,
                 termina de comer e então na próxima iteração sai. */
                 if (clock->current_time < clock->closing_time) {
                     n_pratos_desejados = 0;
-                    pthread_mutex_unlock(&food_mutexes[i]);
+                    pthread_mutex_unlock(&food_mutexes[j]);
                     break;
                 }
 
-                if (self->_wishes[conveyor->_food_slots[i]] > 0) {
-                    customer_pick_food(i);
+                if (self->_wishes[conveyor->_food_slots[j]] > 0) {
+                    customer_pick_food(j);
                     n_pratos_desejados--;
                 }
-                pthread_mutex_unlock(&food_mutexes[i]);
+                pthread_mutex_unlock(&food_mutexes[j]);
             }
+        }
     }
     
     // ✅ 5
@@ -69,13 +75,17 @@ void customer_pick_food(int food_slot) {
     /* 
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
-        1.  O CLIENTE SÓ PODE COMEÇAR A PEGAR COMIDA APÓS ESTAR SENTADO EM UMA VAGA DA ESTEIRA.
-        2.  O CLIENTE SÓ SENTARÁ QUANDO O HOSTESS ATUALIZAR O VALOR customer_t->_seat_position.
-        3.  SE VOCÊ AINDA NÃO IMPLEMENTOU O HOSTESS, COMECE POR ELE (VEJA O ARQUIVO `hostess.c`)!
-        4.  O CLIENTE PODERÁ PEGAR COMIDA DE TRÊS POSSÍVEIS SLOTS: {i-1, i, i+1}, ONDE i É O ÍNDICE 
+        1.  ✅ O CLIENTE SÓ PODE COMEÇAR A PEGAR COMIDA APÓS ESTAR SENTADO EM UMA VAGA DA ESTEIRA.
+        2.  ✅ O CLIENTE SÓ SENTARÁ QUANDO O HOSTESS ATUALIZAR O VALOR customer_t->_seat_position.
+        3.  ✅ SE VOCÊ AINDA NÃO IMPLEMENTOU O HOSTESS, COMECE POR ELE (VEJA O ARQUIVO `hostess.c`)!
+        4.  ✅ O CLIENTE PODERÁ PEGAR COMIDA DE TRÊS POSSÍVEIS SLOTS: {i-1, i, i+1}, ONDE i É O ÍNDICE 
             POSICIONAL DO CLIENTE NA ESTEIRA (O ASSENTO ONDE ELE ESTÁ SENTADO).
-        5.  NOTE QUE CLIENTES ADJACENTES DISPUTARÃO OS MESMOS PRATOS. CUIDADO COM PROBLEMAS DE SINCRONIZAÇÃO!
+        5.  ✅ NOTE QUE CLIENTES ADJACENTES DISPUTARÃO OS MESMOS PRATOS. CUIDADO COM PROBLEMAS DE SINCRONIZAÇÃO!
     */
+    
+    conveyor_belt_t* conveyor = globals_get_conveyor_belt();
+
+    conveyor->_food_slots[food_slot] = -1;
 
 
 
@@ -156,7 +166,8 @@ void customer_leave(customer_t* self) {
     pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
     conveyor_belt->_seats[self->_seat_position] = -1;
     pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
-    sem_post(globals_get_seats_sem());
+    sem_t *sem = globals_get_seats_sem();
+    sem_post(sem);
 }
 
 customer_t* customer_init() {

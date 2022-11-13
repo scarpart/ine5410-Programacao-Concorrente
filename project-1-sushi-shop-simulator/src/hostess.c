@@ -17,7 +17,8 @@ int hostess_check_for_a_free_conveyor_seat() {
     */
     conveyor_belt_t* conveyor = globals_get_conveyor_belt();
     virtual_clock_t* virtual_clock = globals_get_virtual_clock();
-    
+    pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
+
     print_virtual_time(globals_get_virtual_clock());
     fprintf(stdout, GREEN "[INFO]" NO_COLOR " O Hostess está procurando por um assento livre...\n");
     print_conveyor_belt(conveyor);
@@ -25,22 +26,25 @@ int hostess_check_for_a_free_conveyor_seat() {
     /* ✅ 5 - Usando um semáforo, faz com que o while(TRUE) seja desnecessário,
     uma vez que entra para a fila e espera o contador do semáforo ter um valor maior que 0
     sem busy waiting */
-    sem_wait(globals_get_seats_sem());
+    sem_t *sem = globals_get_seats_sem();
+    sem_wait(sem);
     for (int i=1; i<conveyor->_size; i++) {
         /* TODO: mutex para os _seats - pode ser que haja disputa para o acesso no assento,
         mas não tenho certeza. Pensando bem, depois que o consumer da um sem_post, ele ainda
         pode não ter saido do assento, a não ser que a gente faça com que ele saia do assento
         e depois dê o sem_post. É, acho mais fácil assim, porque ao meu ver não tem condição
         de disputa nessa região crítica */
+        
+        pthread_mutex_lock(&seat_mutexes[i]);
         if (conveyor->_seats[i] == -1) {  // Atenção à regra! (-1 = livre, 0 = sushi_chef, 1 = customer)
             print_virtual_time(globals_get_virtual_clock());
             fprintf(stdout, GREEN "[INFO]" NO_COLOR " O Hostess encontrou o assento %d livre para o próximo cliente!\n", i);
             return i;
         }
+        pthread_mutex_unlock(&seat_mutexes[i]);
     }
     // ✅ 3
     msleep(120000/virtual_clock->clock_speed_multiplier);  // Não remova esse sleep!
-
 }
 
 void hostess_guide_first_in_line_customer_to_conveyor_seat(int seat) {
@@ -57,6 +61,7 @@ void hostess_guide_first_in_line_customer_to_conveyor_seat(int seat) {
     */
     conveyor_belt_t* conveyor = globals_get_conveyor_belt();
     queue_t* queue = globals_get_queue();
+    pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
 
     // ✅ 1
     /* ✅ 2 - o problem de sincronização já é resolvido com o uso do semáforo e com a lógica
@@ -64,6 +69,8 @@ void hostess_guide_first_in_line_customer_to_conveyor_seat(int seat) {
     customer_t* customer = queue_remove(queue);
     conveyor->_seats[seat] = 1;
     customer->_seat_position=seat;
+    pthread_mutex_unlock(&seat_mutexes[seat]);
+    sem_post(&customer->_customer_sem);
 
     // ✅ 3
     print_virtual_time(globals_get_virtual_clock());
@@ -79,7 +86,7 @@ void* hostess_run() {
             ESTEIRA GLOBAL CONFORME VAGAS SÃO LIBERADAS.
         2.  ✅ QUANDO O SUSHI SHOP FECHAR, O HOSTESS DEVE PARAR DE GUIAR NOVOS CLIENTES DA FILA PARA 
             A ESTEIRA, E ESVAZIAR A FILA GLOBAL, FINALIZANDO OS CLIENTES EM ESPERA.
-        3.  🚧 CUIDADO COM PROBLEMAS DE SINCRONIZAÇÃO!
+        3.  ✅ CUIDADO COM PROBLEMAS DE SINCRONIZAÇÃO!
         4.  ✅ NÃO REMOVA OS PRINTS!
     */
     virtual_clock_t* virtual_clock = globals_get_virtual_clock();

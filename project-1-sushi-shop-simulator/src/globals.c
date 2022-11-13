@@ -13,26 +13,38 @@
 */
 
 virtual_clock_t *global_virtual_clock = NULL;
-conveyor_belt_t *global_conveyor_belt = NULL;
 queue_t *global_queue = NULL;
 
 /* CÓDIGO QUE ADICIONAMOS COMEÇA AQUI */
-sem_t *seats_sem;
+sem_t seats_sem;
 pthread_mutex_t *seat_mutexes = NULL;
-sem_t *food_sem
-    pthread_mutex_t *food_slot_mutexes = NULL;
+sem_t *food_sem = NULL;
+pthread_mutex_t *food_slot_mutexes = NULL;
+conveyor_belt_t* conveyor_belt = NULL;
 
-void globals_set_seats_sem(sem_t *sem)
+// atenção ao global_conveyor_belt, pode dar BO aqui
+
+conveyor_belt_t* globals_get_conveyor_belt() 
+{
+    return conveyor_belt;
+} 
+
+void globals_set_conveyor_belt() 
+{
+    conveyor_belt = malloc(sizeof(conveyor_belt_t));
+}
+
+void globals_set_seats_sem(sem_t sem)
 {
     seats_sem = sem;
 }
 
-sem_t *globals_get_seats_sem()
+sem_t* globals_get_seats_sem()
 {
-    return seats_sem;
+    return &seats_sem;
 }
 
-void globals_set_foad_sem(sem_t *sem)
+void globals_set_food_sem(sem_t *sem)
 {
     food_sem = sem;
 }
@@ -73,16 +85,6 @@ virtual_clock_t *globals_get_virtual_clock()
     return global_virtual_clock;
 }
 
-void globals_set_conveyor_belt(conveyor_belt_t *conveyor_belt)
-{
-    global_conveyor_belt = conveyor_belt;
-}
-
-conveyor_belt_t *globals_get_conveyor_belt()
-{
-    return global_conveyor_belt;
-}
-
 void globals_set_queue(queue_t *queue)
 {
     global_queue = queue;
@@ -101,8 +103,7 @@ queue_t *globals_get_queue()
 void globals_finalize()
 {
     virtual_clock_finalize(global_virtual_clock);
-    conveyor_belt_finalize(global_conveyor_belt);
     free(food_slot_mutexes);
-    free(seats_sem);
     free(seat_mutexes);
+    conveyor_belt_finalize(conveyor_belt);
 }

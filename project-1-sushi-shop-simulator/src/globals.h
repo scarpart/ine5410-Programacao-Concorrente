@@ -7,40 +7,46 @@
 #include "args.h"
 #include <semaphore.h>
 
-/**
- * @brief Inicializa o array de mutexes com malloc
- *
- * @param size
- */
-void globals_set_seat_mutexes(int size);
 
-/**
- * @brief Retorna um ponteiro para o array de mutexes
- *
- * @return pthread_mutex_t*
- */
-pthread_mutex_t *globals_get_seat_mutexes();
+// pode dar ruim com o globals_get_conveyor_belt() que está mais pro final daqui
+
+extern conveyor_belt_t* globals_get_conveyor_belt();
+extern void globals_set_conveyor_belt();
 
 /**
  * @brief Inicializa o array de mutexes com malloc
  *
  * @param size
  */
-void globals_set_food_slots_mutexes(int size);
+extern void globals_set_seat_mutexes(int size);
 
 /**
  * @brief Retorna um ponteiro para o array de mutexes
  *
  * @return pthread_mutex_t*
  */
-pthread_mutex_t *globals_get_food_slots_mutexes();
+extern pthread_mutex_t *globals_get_seat_mutexes();
+
+/**
+ * @brief Inicializa o array de mutexes com malloc
+ *
+ * @param size
+ */
+extern void globals_set_food_slots_mutexes(int size);
+
+/**
+ * @brief Retorna um ponteiro para o array de mutexes
+ *
+ * @return pthread_mutex_t*
+ */
+extern pthread_mutex_t *globals_get_food_slots_mutexes();
 
 /**
  * @brief Inicia um semáforo de assentos (de modo global)
  *
  * @param sem_t
  */
-extern void globals_set_seats_sem(sem_t *sem);
+extern void globals_set_seats_sem(sem_t sem);
 
 /**
  * @brief Inicia um semáforo dos slots de comida (de modo global)
@@ -54,7 +60,7 @@ extern void globals_set_food_sem(sem_t *sem);
  *
  * @return sem_t*
  */
-extern sem_t *globals_get_seats_sem();
+extern sem_t* globals_get_seats_sem();
 
 /**
  * @brief Retorna um semáforo de slot de comida(de modo global)
@@ -82,14 +88,14 @@ extern virtual_clock_t *globals_get_virtual_clock();
  *
  * @param conveyor_belt
  */
-extern void globals_set_conveyor_belt(conveyor_belt_t *conveyor_belt);
+//extern void globals_set_conveyor_belt(conveyor_belt_t *conveyor_belt);
 
 /**
  * @brief Retorna uma esteira de sushi (de modo global)
  *
  * @return conveyor_belt_t*
  */
-extern conveyor_belt_t *globals_get_conveyor_belt();
+//extern conveyor_belt_t *globals_get_conveyor_belt();
 
 /**
  * @brief Inicia uma fila (de modo global)

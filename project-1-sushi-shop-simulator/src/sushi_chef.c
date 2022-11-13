@@ -10,7 +10,7 @@ void* sushi_chef_run(void* arg) {
     /* 
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO SUSHI CHEF.
         NOTAS:
-        1.  ✅ ❓ O SUSHI CHEF SÓ PODE COMEÇAR A COZINHAR DEPOIS QUE ESTIVER POSICIONADO NA ESTEIRA.
+        1.  ✅ O SUSHI CHEF SÓ PODE COMEÇAR A COZINHAR DEPOIS QUE ESTIVER POSICIONADO NA ESTEIRA.
         2.  ✅ ESSA FUNÇÃO JÁ POSSUI A LÓGICA PARA QUE O SUSHI CHEF COMECE A PREPARAR PRATOS ALEATÓRIOS.
         3.  ✅ VOCÊ DEVE ADICIONAR A LÓGICA PARA QUE O SUSHI CHEF PARE DE ADICIONAR PRATOS E SAIA DA 
             ESTEIRA QUANDO O SUSHI SHOP FECHAR (VEJA O ARQUIVO `virtual_clock.c`).
@@ -49,7 +49,7 @@ void sushi_chef_seat(sushi_chef_t* self) {
     */ 
     conveyor_belt_t* conveyor = globals_get_conveyor_belt();
     pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
-    sem_t* seats_sem = globals_get_seats_sem(); 
+    sem_t *seats_sem = globals_get_seats_sem(); 
 
     print_virtual_time(globals_get_virtual_clock());
     fprintf(stdout, GREEN "[INFO]" NO_COLOR " Sushi Chef %d arrived at the Sushi Shop and wants to seat!\n", self->_id);
@@ -84,7 +84,7 @@ void sushi_chef_leave(sushi_chef_t* self) {
         3.  ✅ NÃO REMOVA OS PRINTS.
     */
     conveyor_belt_t* conveyor = globals_get_conveyor_belt();
-    sem_t* seats_sem = globals_get_seats_sem();
+    sem_t *seats_sem = globals_get_seats_sem();
     pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
 
     /* ✅ 1 - Isso é garantido na lógica do sushi_chef_run() */
@@ -95,7 +95,7 @@ void sushi_chef_leave(sushi_chef_t* self) {
     pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
     conveyor->_seats[self->_seat_position] = -1;
     pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
-    sem_post(&seats_sem);
+    sem_post(seats_sem);
 
     print_virtual_time(globals_get_virtual_clock());
     fprintf(stdout, GREEN "[INFO]" NO_COLOR " Sushi Chef %d seated at conveyor->_seats[%d] stopped cooking and left the shop!\n", self->_id, self->_seat_position);    
@@ -116,6 +116,8 @@ void sushi_chef_place_food(sushi_chef_t* self, enum menu_item dish) {
     print_virtual_time(globals_get_virtual_clock());
     fprintf(stdout, GREEN "[INFO]" NO_COLOR " Sushi Chef %d wants to place %u at conveyor->_foot_slot[%d]!\n", self->_id, dish, self->_seat_position);
 
+    conveyor_belt_t* conveyor = globals_get_conveyor_belt();
+
     /* INSIRA SUA LÓGICA AQUI */
     /* 🚧 🚫 - um mutex faz o lock da posição, garantindo a atomicidade sem precisar do
     while (TRUE), mas dentro dele temos que fazer uma checagem para ver se o slot está vago,
@@ -123,20 +125,25 @@ void sushi_chef_place_food(sushi_chef_t* self, enum menu_item dish) {
     teria simplesmente preparado a comida e depois jogado ela fora 🤷
     Isso faz com que tenha um while(TRUE) aqui, porque não consegui pensar em mais nada, mas
     tenho quase certeza de que da para melhorar isso */ 
-    while (1) { 
+    while (TRUE) { 
         /* ✅ 4 - O mutex da posição individual garante que não há condição de corrida para
         aquele recurso. */
+        /* ✅ ISSO NÃO É BUSY WAITING */
+        
+        /* TRYLOCK CONSUMIDOR 0 UNLOCK DPS */
+        pthread_mutex_lock(&conveyor->_food_slots_mutex);
+        /* ^^^^^^^ */
         pthread_mutex_lock(&food_slots_mutexes[self->_seat_position]);
         if (conveyor_belt->_food_slots[self->_seat_position] == -1) {
             conveyor_belt->_food_slots[self->_seat_position] = dish;
             pthread_mutex_unlock(&food_slots_mutexes[self->_seat_position]);       
+            print_virtual_time(globals_get_virtual_clock());
+            fprintf(stdout, GREEN "[INFO]" NO_COLOR " Sushi Chef %d placed %u at conveyor->_foot_slot[%d]!\n", self->_id, dish, self->_seat_position);
             break;
-        }
+        }     
         pthread_mutex_unlock(&food_slots_mutexes[self->_seat_position]);
     }
 
-    print_virtual_time(globals_get_virtual_clock());
-    fprintf(stdout, GREEN "[INFO]" NO_COLOR " Sushi Chef %d placed %u at conveyor->_foot_slot[%d]!\n", self->_id, dish, self->_seat_position);
 
     /* INSIRA SUA LÓGICA AQUI */
 

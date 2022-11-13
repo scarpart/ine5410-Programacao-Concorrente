@@ -5,7 +5,7 @@
 #include "args.h"
 #include "menu.h"
 #include "conveyor_belt.h"
-
+#include <semaphore.h>
 
 /**
  * @brief Cliente do Sushi Shop.
@@ -15,6 +15,7 @@ typedef struct customer {
     int _wishes[5];
     int _seat_position;
     pthread_t thread;
+    sem_t _customer_sem;
 } customer_t;
 
 customer_t* customer_init();

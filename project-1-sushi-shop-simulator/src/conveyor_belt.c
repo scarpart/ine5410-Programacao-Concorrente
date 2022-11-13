@@ -18,24 +18,26 @@ void* conveyor_belt_run(void* arg) {
         print_conveyor_belt(self);
 
         msleep(CONVEYOR_MOVING_PERIOD/virtual_clock->clock_speed_multiplier);
-        //pthread_mutex_lock(&self->_food_slots_mutex);
+        pthread_mutex_trylock(&self->_food_slots_mutex);
+        pthread_mutex_t* mutex = globals_get_food_slots_mutexes();        
+
         //int last = self->_food_slots[0];
-        pthread_mutex_t* mutex = globals_get_food_slots_mutexes();
-        for (int i=0; i<self->_size-1; i++) {
-            /* 
-            Mudamos a ordem de andamento da esteira:
-            antes ela caminhava da direita para esquerda, agora caminha da esquerda para
-            a direita (de 0 até self->_size-1). Isso foi feito para facilitar o uso de 
-            mutexes na nossa implementação e adquirir paralelismo de verdade.
-            */             
+        for (int i=0; i < self->_size; i++)
             pthread_mutex_lock(&mutex[i]);
-            pthread_mutex_lock(&mutex[(i + 1) % self->_size]);
+        
+        for (int i=self->_size-1; i>=0; i--) {             
+            //pthread_mutex_lock(&mutex[i]);
+            //pthread_mutex_lock(&mutex[(i + 1) % self->_size]);
             self->_food_slots[(i + 1) % self->_size] = self->_food_slots[i];
-            pthread_mutex_unlock(&mutex[(i + 1) % self->_size]);
-            pthread_mutex_unlock(&mutex[i]);
+            //pthread_mutex_unlock(&mutex[(i + 1) % self->_size]);
+            //pthread_mutex_unlock(&mutex[i]);
         }
+
+        for (int i=0; i < self->_size; i++)
+            pthread_mutex_unlock(&mutex[i]);
+
         //self->_food_slots[self->_size-1] = last;
-        //pthread_mutex_unlock(&self->_food_slots_mutex);
+        pthread_mutex_unlock(&self->_food_slots_mutex);
 
         print_virtual_time(globals_get_virtual_clock());
         fprintf(stdout, GREEN "[INFO]" NO_COLOR " Conveyor belt finished moving...\n");
@@ -46,11 +48,13 @@ void* conveyor_belt_run(void* arg) {
 
 conveyor_belt_t* conveyor_belt_init(config_t* config) {
     /* NÃO PRECISA ALTERAR ESSA FUNÇÃO */
-    conveyor_belt_t* self = malloc(sizeof(conveyor_belt_t));
+    globals_set_conveyor_belt();
+    conveyor_belt_t* self = globals_get_conveyor_belt();
     if (self == NULL) {
         fprintf(stdout, RED "[ERROR] Bad malloc() at `conveyor_belt_t* conveyor_belt_init()`.\n" NO_COLOR);
         exit(EXIT_FAILURE);
     }
+    fprintf(stdout, GREEN "VALOR DO CONVEYOR BELT CAPACITY: %d\n\n\n\n\n\n", config->conveyor_belt_capacity);
     self->_size = config->conveyor_belt_capacity;
     self->_seats = (int*) malloc(sizeof(int)* self->_size);
     self->_food_slots = (int*) malloc(sizeof(int)* self->_size);
