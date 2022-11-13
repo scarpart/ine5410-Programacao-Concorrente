@@ -17,10 +17,10 @@ conveyor_belt_t *global_conveyor_belt = NULL;
 queue_t *global_queue = NULL;
 
 /* CÓDIGO QUE ADICIONAMOS COMEÇA AQUI */
-ssem_t *seats_sem;
+sem_t *seats_sem;
+pthread_mutex_t *seat_mutexes = NULL;
 sem_t *food_sem
     pthread_mutex_t *food_slot_mutexes = NULL;
-pthread_mutex_t *seat_mutexes = NULL;
 
 void globals_set_seats_sem(sem_t *sem)
 {
