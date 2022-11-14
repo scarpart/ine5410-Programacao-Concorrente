@@ -23,7 +23,6 @@ void* customer_run(void* arg) {
         8.  ✅ LEMBRE-SE DE TOMAR CUIDADO COM ERROS DE CONCORRÊNCIA!
     */ 
     customer_t* self = (customer_t*) arg;
-    self->_seat_position = -1;
 
     pthread_mutex_t* food_mutexes = globals_get_food_slots_mutexes();
     conveyor_belt_t* conveyor = globals_get_conveyor_belt();
@@ -40,7 +39,7 @@ void* customer_run(void* arg) {
     while (n_pratos_desejados > 0) {
         // ✅ 2
         for (int i = self->_seat_position - 1; i <= self->_seat_position + 1; i++) {
-            fprintf(stdout, BLUE "VALOR DO CONVEYOR SIZE: %d\n", conveyor->_size);
+            //fprintf(stdout, BLUE "VALOR DO CONVEYOR SIZE: %d\n", conveyor->_size);
             int j = i % conveyor->_size;
             /* ✅ 8 - trylock retorna 0 se conseguiu dar lock no mutex, ou seja, se não
             tem ninguém acessando aquela posição, estando livre. Caso == 0, checa se tem
@@ -60,6 +59,8 @@ void* customer_run(void* arg) {
                     n_pratos_desejados--;
                 }
                 pthread_mutex_unlock(&food_mutexes[j]);
+                fprintf(stdout, RED "CHEGOU AQUI CUSTOMER RUN🤠🤠🤠🤠🤠🤠🤠\n");
+                exit(1);
             }
         }
     }
@@ -67,7 +68,6 @@ void* customer_run(void* arg) {
     // ✅ 5
     customer_leave(self);
 
-    msleep(1000000);  // REMOVA ESTE SLEEP APÓS IMPLEMENTAR SUA SOLUÇÃO!
     pthread_exit(NULL);
 }
 
@@ -164,10 +164,18 @@ void customer_leave(customer_t* self) {
     semáforo para indicar que mais um assento foi liberado e habilitar a hostess à guiar
     um cliente */
     pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
+    
+    fprintf(stdout, RED "ABABAYEEDEYOO 🤠🤠🤠🤠🤠🤠🤠🤠🤠🤠\n");
+    fprintf(stdout, RED "valor do self->_seat_position: %d\n", self->_seat_position);
+    //fprintf(stdout, RED "valor do _seats em self->_seat_position (%d): %d\n", self->_seat_position); //conveyor_belt->_seats[self->_seat_position]);
     conveyor_belt->_seats[self->_seat_position] = -1;
+    
     pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
     sem_t *sem = globals_get_seats_sem();
     sem_post(sem);
+
+    fprintf(stdout, RED "DPS DO ABABEYEEDEYOOO 🤠🤠🤠🤠🤠🤠🤠🤠🤠🤠\n");
+    exit(1);
 }
 
 customer_t* customer_init() {
@@ -182,6 +190,7 @@ customer_t* customer_init() {
         self->_wishes[i] = (rand() % 4);
     }
     self->_seat_position = -1;
+    sem_init(&self->_customer_sem, 0, 0); // 🤠🤠🤠🤠🤠🤠🤠
     pthread_create(&self->thread, NULL, customer_run, (void *) self);
     return self;
 }

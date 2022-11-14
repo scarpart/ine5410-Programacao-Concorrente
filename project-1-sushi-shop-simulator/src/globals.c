@@ -31,7 +31,7 @@ conveyor_belt_t* globals_get_conveyor_belt()
 
 void globals_set_conveyor_belt() 
 {
-    conveyor_belt = malloc(sizeof(conveyor_belt_t));
+    conveyor_belt = (conveyor_belt_t*)malloc(sizeof(conveyor_belt_t));
 }
 
 void globals_set_seats_sem(sem_t sem)

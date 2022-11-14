@@ -25,13 +25,19 @@ void* conveyor_belt_run(void* arg) {
         for (int i=0; i < self->_size; i++)
             pthread_mutex_lock(&mutex[i]);
         
-        for (int i=self->_size-1; i>=0; i--) {             
+        int first = self->_food_slots[0];
+        for (int i = 0; i < self->_size-1; i++) {
+        //for (int i=self->_size-1; i>=0; i--) {             
             //pthread_mutex_lock(&mutex[i]);
             //pthread_mutex_lock(&mutex[(i + 1) % self->_size]);
-            self->_food_slots[(i + 1) % self->_size] = self->_food_slots[i];
+            //fprintf(stdout, MAGENTA "BEFORE THE ASSIGNMENT\nself->_food_slots[(i+1)\%self->_size = %d\n",
+            //            self->_food_slots[(i + 1) % self->_size]);
+            self->_food_slots[i] = self->_food_slots[i+1];
+            //self->_food_slots[(i + 1) % self->_size] = self->_food_slots[i];
             //pthread_mutex_unlock(&mutex[(i + 1) % self->_size]);
             //pthread_mutex_unlock(&mutex[i]);
         }
+        self->_food_slots[self->_size-1] = first;
 
         for (int i=0; i < self->_size; i++)
             pthread_mutex_unlock(&mutex[i]);
@@ -54,9 +60,14 @@ conveyor_belt_t* conveyor_belt_init(config_t* config) {
         fprintf(stdout, RED "[ERROR] Bad malloc() at `conveyor_belt_t* conveyor_belt_init()`.\n" NO_COLOR);
         exit(EXIT_FAILURE);
     }
-    fprintf(stdout, GREEN "VALOR DO CONVEYOR BELT CAPACITY: %d\n\n\n\n\n\n", config->conveyor_belt_capacity);
     self->_size = config->conveyor_belt_capacity;
     self->_seats = (int*) malloc(sizeof(int)* self->_size);
+    //fprintf(stdout, RED "self->_size = %d\n", self->_size);
+    //for (int i = 0; i < self->_size; i++) {
+    //    printf(BLUE "🦧🦧🦧🦧🦧🦧 YEEHAW 🦧🦧🦧🦧🦧🦧🦧🦧%ls\n", &self->_seats[i]);
+    //    printf("%d\n", i);
+    //}
+    //exit(1);
     self->_food_slots = (int*) malloc(sizeof(int)* self->_size);
     for (int i=0; i<self->_size; i++) {
         self->_food_slots[i] = -1;

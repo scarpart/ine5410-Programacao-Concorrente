@@ -144,7 +144,6 @@ void sushi_chef_place_food(sushi_chef_t* self, enum menu_item dish) {
         pthread_mutex_unlock(&food_slots_mutexes[self->_seat_position]);
     }
 
-
     /* INSIRA SUA LÓGICA AQUI */
 
 }
