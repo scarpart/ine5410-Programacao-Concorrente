@@ -157,7 +157,7 @@ void customer_leave(customer_t* self) {
     if (self->_seat_position != -1) {
         conveyor_belt_t* conveyor_belt = globals_get_conveyor_belt();
         pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
-    
+
         /* INSIRA SUA LÓGICA AQUI */
         /* ✅ - Garante a atomicidade do acesso ao assento com mutexes e depois dá um post no
         semáforo para indicar que mais um assento foi liberado e habilitar a hostess à guiar
@@ -165,9 +165,10 @@ void customer_leave(customer_t* self) {
         pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
         conveyor_belt->_seats[self->_seat_position] = -1;
         //self->_seat_position = -1;
-        pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
         sem_t *sem = globals_get_seats_sem();
         sem_post(sem);
+        pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
+        customer_finalize(self);
     }
 }
 
@@ -190,7 +191,7 @@ customer_t* customer_init() {
 
 void customer_finalize(customer_t* self) {
     /* NÃO PRECISA ALTERAR ESSA FUNÇÃO */
-    sem_destroy(&self->_customer_sem);
+    //sem_destroy(&self->_customer_sem);
     pthread_join(self->thread, NULL);
     free(self);
 }

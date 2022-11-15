@@ -29,11 +29,6 @@ int hostess_check_for_a_free_conveyor_seat() {
     sem_t *sem = globals_get_seats_sem();
     sem_wait(sem);
     for (int i=1; i<conveyor->_size; i++) {
-        /* TODO: mutex para os _seats - pode ser que haja disputa para o acesso no assento,
-        mas não tenho certeza. Pensando bem, depois que o consumer da um sem_post, ele ainda
-        pode não ter saido do assento, a não ser que a gente faça com que ele saia do assento
-        e depois dê o sem_post. É, acho mais fácil assim, porque ao meu ver não tem condição
-        de disputa nessa região crítica */
         
         pthread_mutex_lock(&seat_mutexes[i]);
         if (conveyor->_seats[i] == -1) {  // Atenção à regra! (-1 = livre, 0 = sushi_chef, 1 = customer)
