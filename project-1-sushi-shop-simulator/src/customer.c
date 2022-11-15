@@ -38,21 +38,13 @@ void* customer_run(void* arg) {
     sem_wait(&self->_customer_sem); /* giovani vai amar isso */
     while (n_pratos_desejados > 0 &&
                 clock->current_time < clock->closing_time) {
+
         // ✅ 2
         for (int i = self->_seat_position - 1; i <= self->_seat_position + 1; i++) {
+            
             int j = i % conveyor->_size;
-            /* ✅ 8 - trylock retorna 0 se conseguiu dar lock no mutex, ou seja, se não
-            tem ninguém acessando aquela posição, estando livre. Caso == 0, checa se tem
-            comida na posição e a toma caso seja do tipo que queria */
+            
             if (pthread_mutex_trylock(&food_mutexes[j]) == 0) {
-                /* ✅ 6 e 7 - antes dele comer, checa se o restaurante fechou, caso sim,
-                ele sai, caso contrário ele come. Se o restaurante fechar enquanto ele come,
-                termina de comer e então na próxima iteração sai. */
-                // if (clock->current_time >= clock->closing_time) {
-                    // n_pratos_desejados = 0;
-                    // pthread_mutex_unlock(&food_mutexes[j]);
-                    // break;
-                // }
                 
                 if (conveyor->_food_slots[j] != -1) {
                     if (customer_pick_food(self, conveyor->_food_slots[j], j)) {
@@ -161,18 +153,22 @@ void customer_leave(customer_t* self) {
         NOTAS:
         1.  ✅ ESSA FUNÇÃO DEVERÁ REMOVER O CLIENTE DO ASSENTO DO CONVEYOR_BELT GLOBAL QUANDO EXECUTADA.
     */
-    conveyor_belt_t* conveyor_belt = globals_get_conveyor_belt();
-    pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
 
-    /* INSIRA SUA LÓGICA AQUI */
-    /* ✅ - Garante a atomicidade do acesso ao assento com mutexes e depois dá um post no
-    semáforo para indicar que mais um assento foi liberado e habilitar a hostess à guiar
-    um cliente */
-    pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
-    conveyor_belt->_seats[self->_seat_position] = -1;
-    pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
-    sem_t *sem = globals_get_seats_sem();
-    sem_post(sem);
+    if (self->_seat_position != -1) {
+        conveyor_belt_t* conveyor_belt = globals_get_conveyor_belt();
+        pthread_mutex_t* seat_mutexes = globals_get_seat_mutexes();
+    
+        /* INSIRA SUA LÓGICA AQUI */
+        /* ✅ - Garante a atomicidade do acesso ao assento com mutexes e depois dá um post no
+        semáforo para indicar que mais um assento foi liberado e habilitar a hostess à guiar
+        um cliente */
+        pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
+        conveyor_belt->_seats[self->_seat_position] = -1;
+        //self->_seat_position = -1;
+        pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
+        sem_t *sem = globals_get_seats_sem();
+        sem_post(sem);
+    }
 }
 
 customer_t* customer_init() {
