@@ -40,10 +40,12 @@ int main (int argc, char** argv) {
     for (int i = 0; i < conveyor->_size; i++)
         pthread_mutex_init(&food_mutexes[i], NULL);
 
-    /* FIM DO CÓDIGO QUE NÓS COLOCAMOS */
 
     /* Init the Sushi Chef */
-    sushi_chef_t* sushi_chef = sushi_chef_init();
+    sushi_chef_t** chefs = (sushi_chef_t**)malloc(sizeof(sushi_chef_t)*config.sushi_chefs);    
+    
+    for (int i = 0; i < config.sushi_chefs; i++)
+        chefs[i] = sushi_chef_init();
 
     /* Setup customer queue */
     globals_set_queue(queue_init());
@@ -53,8 +55,13 @@ int main (int argc, char** argv) {
 
     /* Join threads and free used memory */
     hostess_finalize(hostess);
-    sushi_chef_finalize(sushi_chef);
+    
+    for (int i = 0; i < config.sushi_chefs; i++)
+        sushi_chef_finalize(chefs[i]);
+    
     globals_finalize();
+    /* FIM DO CÓDIGO QUE NÓS COLOCAMOS */
+
 
     return EXIT_SUCCESS;
 }
