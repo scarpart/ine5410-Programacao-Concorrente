@@ -55,9 +55,11 @@ void* customer_run(void* arg) {
                 // }
                 
                 if (conveyor->_food_slots[j] != -1) {
-                    fprintf(stdout, BLUE "conveyor->_food_slots[j] % d\n", conveyor->_food_slots[j]);
-                    customer_pick_food(self, conveyor->_food_slots[j], j);
-                    n_pratos_desejados--;
+                    if (customer_pick_food(self, conveyor->_food_slots[j], j)) {
+                        n_pratos_desejados--;
+                        pthread_mutex_unlock(&food_mutexes[j]);
+                        break;
+                    }
                 }
 
                 pthread_mutex_unlock(&food_mutexes[j]);
@@ -71,7 +73,7 @@ void* customer_run(void* arg) {
     pthread_exit(NULL);
 }
 
-void customer_pick_food(customer_t* self, int food_slot, int j) {
+int customer_pick_food(customer_t* self, int food_slot, int j) {
     /* 
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
@@ -88,7 +90,9 @@ void customer_pick_food(customer_t* self, int food_slot, int j) {
     if (self->_wishes[food_slot] != 0) {
         customer_eat(self, food_slot);
         conveyor->_food_slots[j] = -1;
+        return 1;
     }
+    return 0;
 
     /* INSIRA SUA LÓGICA AQUI */
 }
