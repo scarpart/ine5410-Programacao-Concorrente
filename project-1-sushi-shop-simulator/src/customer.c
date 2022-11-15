@@ -36,7 +36,8 @@ void* customer_run(void* arg) {
 
     // ✅ 5
     sem_wait(&self->_customer_sem); /* giovani vai amar isso */
-    while (n_pratos_desejados > 0) {
+    while (n_pratos_desejados > 0 &&
+                clock->current_time < clock->closing_time) {
         // ✅ 2
         for (int i = self->_seat_position - 1; i <= self->_seat_position + 1; i++) {
             int j = i % conveyor->_size;
@@ -47,15 +48,15 @@ void* customer_run(void* arg) {
                 /* ✅ 6 e 7 - antes dele comer, checa se o restaurante fechou, caso sim,
                 ele sai, caso contrário ele come. Se o restaurante fechar enquanto ele come,
                 termina de comer e então na próxima iteração sai. */
-                if (clock->current_time >= clock->closing_time) {
-                    n_pratos_desejados = 0;
-                    pthread_mutex_unlock(&food_mutexes[j]);
-                    break;
-                }
+                // if (clock->current_time >= clock->closing_time) {
+                    // n_pratos_desejados = 0;
+                    // pthread_mutex_unlock(&food_mutexes[j]);
+                    // break;
+                // }
                 
                 if (conveyor->_food_slots[j] != -1) {
                     fprintf(stdout, BLUE "conveyor->_food_slots[j] % d\n", conveyor->_food_slots[j]);
-                    customer_pick_food(self, conveyor->_food_slots[j]);
+                    customer_pick_food(self, conveyor->_food_slots[j], j);
                     n_pratos_desejados--;
                 }
 
@@ -70,7 +71,7 @@ void* customer_run(void* arg) {
     pthread_exit(NULL);
 }
 
-void customer_pick_food(customer_t* self, int food_slot) {
+void customer_pick_food(customer_t* self, int food_slot, int j) {
     /* 
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
@@ -86,7 +87,7 @@ void customer_pick_food(customer_t* self, int food_slot) {
 
     if (self->_wishes[food_slot] != 0) {
         customer_eat(self, food_slot);
-        conveyor->_food_slots[self->_seat_position] = -1;
+        conveyor->_food_slots[j] = -1;
     }
 
     /* INSIRA SUA LÓGICA AQUI */
