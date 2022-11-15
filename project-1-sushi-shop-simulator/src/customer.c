@@ -51,20 +51,16 @@ void *customer_run(void *arg)
                 customer_leave(self);
                 pthread_exit(NULL);
             }
-            if (pthread_mutex_trylock(&food_mutexes[j]) == 0)
+            pthread_mutex_lock(&food_mutexes[j]);
+            if (conveyor->_food_slots[j] != -1)
             {
-
-                if (conveyor->_food_slots[j] != -1)
+                if (customer_pick_food(self, conveyor->_food_slots[j], j))
                 {
-                    if (customer_pick_food(self, conveyor->_food_slots[j], j))
-                    {
-                        n_pratos_desejados--;
-                        pthread_mutex_unlock(&food_mutexes[j]);
-                    }
+                    n_pratos_desejados--;
+                    pthread_mutex_unlock(&food_mutexes[j]);
                 }
-
-                pthread_mutex_unlock(&food_mutexes[j]);
             }
+            pthread_mutex_unlock(&food_mutexes[j]);
         }
     }
 
