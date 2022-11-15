@@ -7,7 +7,7 @@
 
 config_t parse(int argc, char **argv) {
     int c;
-    config_t config = { 1, 20, 10, 18, 15 };
+    config_t config = { 1, 10, 10, 18, 15 };
 
     while ((c = getopt(argc, argv, "c:b:s:o:x:m:h")) != -1) {
         switch (c) {

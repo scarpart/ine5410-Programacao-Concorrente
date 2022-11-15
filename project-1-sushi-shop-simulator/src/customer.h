@@ -24,7 +24,7 @@ void customer_finalize(customer_t* self);
 
 void print_customer(customer_t* self);
 
-void customer_pick_food(int food_slot);
+void customer_pick_food(customer_t* self, int food_slot);
 void customer_eat(customer_t* self, enum menu_item food);
 void customer_leave(customer_t* self);
 

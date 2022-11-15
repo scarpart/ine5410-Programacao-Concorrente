@@ -69,8 +69,8 @@ void hostess_guide_first_in_line_customer_to_conveyor_seat(int seat) {
     customer_t* customer = queue_remove(queue);
     conveyor->_seats[seat] = 1;
     customer->_seat_position=seat;
-    pthread_mutex_unlock(&seat_mutexes[seat]);
     sem_post(&customer->_customer_sem);
+    pthread_mutex_unlock(&seat_mutexes[seat]);
 
     // ✅ 3
     print_virtual_time(globals_get_virtual_clock());

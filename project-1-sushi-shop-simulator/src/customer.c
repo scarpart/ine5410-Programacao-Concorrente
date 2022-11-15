@@ -39,7 +39,6 @@ void* customer_run(void* arg) {
     while (n_pratos_desejados > 0) {
         // ✅ 2
         for (int i = self->_seat_position - 1; i <= self->_seat_position + 1; i++) {
-            //fprintf(stdout, BLUE "VALOR DO CONVEYOR SIZE: %d\n", conveyor->_size);
             int j = i % conveyor->_size;
             /* ✅ 8 - trylock retorna 0 se conseguiu dar lock no mutex, ou seja, se não
             tem ninguém acessando aquela posição, estando livre. Caso == 0, checa se tem
@@ -48,19 +47,19 @@ void* customer_run(void* arg) {
                 /* ✅ 6 e 7 - antes dele comer, checa se o restaurante fechou, caso sim,
                 ele sai, caso contrário ele come. Se o restaurante fechar enquanto ele come,
                 termina de comer e então na próxima iteração sai. */
-                if (clock->current_time < clock->closing_time) {
+                if (clock->current_time >= clock->closing_time) {
                     n_pratos_desejados = 0;
                     pthread_mutex_unlock(&food_mutexes[j]);
                     break;
                 }
-
-                if (self->_wishes[conveyor->_food_slots[j]] > 0) {
-                    customer_pick_food(j);
+                
+                if (conveyor->_food_slots[j] != -1) {
+                    fprintf(stdout, BLUE "conveyor->_food_slots[j] % d\n", conveyor->_food_slots[j]);
+                    customer_pick_food(self, conveyor->_food_slots[j]);
                     n_pratos_desejados--;
                 }
+
                 pthread_mutex_unlock(&food_mutexes[j]);
-                fprintf(stdout, RED "CHEGOU AQUI CUSTOMER RUN🤠🤠🤠🤠🤠🤠🤠\n");
-                exit(1);
             }
         }
     }
@@ -71,7 +70,7 @@ void* customer_run(void* arg) {
     pthread_exit(NULL);
 }
 
-void customer_pick_food(int food_slot) {
+void customer_pick_food(customer_t* self, int food_slot) {
     /* 
         MODIFIQUE ESSA FUNÇÃO PARA GARANTIR O COMPORTAMENTO CORRETO E EFICAZ DO CLIENTE.
         NOTAS:
@@ -85,9 +84,10 @@ void customer_pick_food(int food_slot) {
     
     conveyor_belt_t* conveyor = globals_get_conveyor_belt();
 
-    conveyor->_food_slots[food_slot] = -1;
-
-
+    if (self->_wishes[food_slot] != 0) {
+        customer_eat(self, food_slot);
+        conveyor->_food_slots[self->_seat_position] = -1;
+    }
 
     /* INSIRA SUA LÓGICA AQUI */
 }
@@ -164,18 +164,10 @@ void customer_leave(customer_t* self) {
     semáforo para indicar que mais um assento foi liberado e habilitar a hostess à guiar
     um cliente */
     pthread_mutex_lock(&seat_mutexes[self->_seat_position]);
-    
-    fprintf(stdout, RED "ABABAYEEDEYOO 🤠🤠🤠🤠🤠🤠🤠🤠🤠🤠\n");
-    fprintf(stdout, RED "valor do self->_seat_position: %d\n", self->_seat_position);
-    //fprintf(stdout, RED "valor do _seats em self->_seat_position (%d): %d\n", self->_seat_position); //conveyor_belt->_seats[self->_seat_position]);
     conveyor_belt->_seats[self->_seat_position] = -1;
-    
     pthread_mutex_unlock(&seat_mutexes[self->_seat_position]);
     sem_t *sem = globals_get_seats_sem();
     sem_post(sem);
-
-    fprintf(stdout, RED "DPS DO ABABEYEEDEYOOO 🤠🤠🤠🤠🤠🤠🤠🤠🤠🤠\n");
-    exit(1);
 }
 
 customer_t* customer_init() {
@@ -197,6 +189,7 @@ customer_t* customer_init() {
 
 void customer_finalize(customer_t* self) {
     /* NÃO PRECISA ALTERAR ESSA FUNÇÃO */
+    sem_destroy(&self->_customer_sem);
     pthread_join(self->thread, NULL);
     free(self);
 }

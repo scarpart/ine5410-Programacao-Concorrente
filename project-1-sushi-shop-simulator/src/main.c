@@ -35,10 +35,11 @@ int main (int argc, char** argv) {
     for (int i = 0; i < conveyor->_size; i++)
         pthread_mutex_init(&seat_mutexes[i], NULL);
 
+    globals_set_food_slots_mutexes(conveyor->_size);
+    pthread_mutex_t* food_mutexes = globals_get_food_slots_mutexes();
+    for (int i = 0; i < conveyor->_size; i++)
+        pthread_mutex_init(&food_mutexes[i], NULL);
 
-    /* CÓDIGO QUE NÓS COLOCAMOS */
-    /* Setup mutex array dos food slots*/
-    globals_set_food_slots_mutexes(config.conveyor_belt_capacity);
     /* FIM DO CÓDIGO QUE NÓS COLOCAMOS */
 
     /* Init the Sushi Chef */
